@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import logging
+import os
 
 from app.database import get_db
 from app.models.message import Message
@@ -19,10 +20,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware - allow all origins for simplicity
+# Get allowed origins from environment variable
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
+allowed_origins = [FRONTEND_URL] if FRONTEND_URL != "*" else ["*"]
+
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
