@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 RUN npx playwright install chromium
