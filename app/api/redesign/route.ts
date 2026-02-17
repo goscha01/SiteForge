@@ -48,19 +48,35 @@ export async function POST(req: NextRequest) {
 
     // Step E: Optional Recraft illustrations
     if (input.withIllustrations) {
+      // Extract icon subjects from ValueProps3 block items
+      const valueBlock = schema.blocks.find((b) => b.type === 'ValueProps3');
+      const iconSubjects = valueBlock && valueBlock.type === 'ValueProps3'
+        ? valueBlock.items.map((item) => item.title)
+        : [];
+
       const assets = await generateAssets(
         schema.tokens.brandName,
         direction.mood,
-        direction.siteType
+        direction.siteType,
+        iconSubjects
       );
 
-      // Inject hero image if generated
+      // Inject hero image
       if (assets.heroImage) {
         const heroBlock = schema.blocks.find((b) => b.type === 'HeroSplit');
         if (heroBlock && heroBlock.type === 'HeroSplit') {
           (heroBlock as { imageUrl?: string }).imageUrl = assets.heroImage;
           (heroBlock as { imageAlt?: string }).imageAlt = `${schema.tokens.brandName} hero illustration`;
         }
+      }
+
+      // Inject feature icons into ValueProps3
+      if (assets.icons.length > 0 && valueBlock && valueBlock.type === 'ValueProps3') {
+        valueBlock.items.forEach((item, i) => {
+          if (assets.icons[i]) {
+            item.icon = assets.icons[i];
+          }
+        });
       }
     }
 

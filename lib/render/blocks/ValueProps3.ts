@@ -10,7 +10,7 @@ export function renderValueProps3(block: ValueProps3Block, tokens: Tokens): stri
 
   const itemsHtml = block.items.map((item) => `
     <div class="text-center p-6">
-      <div class="text-4xl mb-4">${item.icon}</div>
+      ${item.icon.startsWith('data:') ? `<img src="${item.icon}" alt="${escapeHtml(item.title)}" class="w-16 h-16 mx-auto mb-2" />` : `<div class="text-4xl mb-4">${item.icon}</div>`}
       <h3 class="text-xl font-semibold mb-3" style="color: ${tokens.primaryColor}; font-family: '${tokens.headingFont}', sans-serif;">
         ${escapeHtml(item.title)}
       </h3>
