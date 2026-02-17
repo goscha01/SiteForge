@@ -27,10 +27,16 @@ function renderStandard(
 ): string {
   const itemsHtml = block.items.map((item, i) => {
     const isReversed = i % 2 === 1;
+    const visualHtml = item.icon && item.icon.startsWith('data:')
+      ? `<div class="flex-1 w-full flex items-center justify-center p-8" style="background: linear-gradient(135deg, ${palette.primary}08, ${palette.accent}10); border-radius: 0.75rem;">
+          <img src="${item.icon}" alt="${escapeHtml(item.title)}" class="w-32 h-32 lg:w-40 lg:h-40 object-contain" />
+        </div>`
+      : `<div class="flex-1 w-full h-48 lg:h-64 flex items-center justify-center" style="background: linear-gradient(135deg, ${palette.primary}10, ${palette.accent}15); border-radius: 0.75rem;">
+          ${item.icon ? `<span class="text-5xl">${escapeHtml(item.icon)}</span>` : ''}
+        </div>`;
     return `
     <div class="flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8 lg:gap-16">
       <div class="flex-1">
-        ${item.icon ? `<div class="text-3xl mb-3">${escapeHtml(item.icon)}</div>` : ''}
         <h3 class="text-2xl lg:text-3xl font-bold mb-3" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif;">
           ${escapeHtml(item.title)}
         </h3>
@@ -38,7 +44,7 @@ function renderStandard(
           ${escapeHtml(item.description)}
         </p>
       </div>
-      <div class="flex-1 w-full h-48 lg:h-64" style="background: linear-gradient(135deg, ${palette.primary}10, ${palette.accent}15); border-radius: 0.75rem;"></div>
+      ${visualHtml}
     </div>`;
   }).join('');
 
@@ -63,10 +69,16 @@ function renderWithImage(
 ): string {
   const itemsHtml = block.items.map((item, i) => {
     const isReversed = i % 2 === 1;
+    const visualHtml = item.icon && item.icon.startsWith('data:')
+      ? `<div class="flex-1 w-full aspect-video flex items-center justify-center" style="background: ${palette.surface}; border: 1px solid ${palette.secondary}15; border-radius: ${borderRadius};">
+          <img src="${item.icon}" alt="${escapeHtml(item.title)}" class="w-32 h-32 lg:w-40 lg:h-40 object-contain" />
+        </div>`
+      : `<div class="flex-1 w-full aspect-video flex items-center justify-center" style="background: ${palette.surface}; border: 1px solid ${palette.secondary}15; border-radius: ${borderRadius};">
+          ${item.icon ? `<span class="text-5xl">${escapeHtml(item.icon)}</span>` : ''}
+        </div>`;
     return `
     <div class="flex flex-col ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8 lg:gap-12">
       <div class="flex-1">
-        ${item.icon ? `<div class="text-3xl mb-3">${escapeHtml(item.icon)}</div>` : ''}
         <h3 class="text-xl lg:text-2xl font-bold mb-3" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif;">
           ${escapeHtml(item.title)}
         </h3>
@@ -74,7 +86,7 @@ function renderWithImage(
           ${escapeHtml(item.description)}
         </p>
       </div>
-      <div class="flex-1 w-full aspect-video" style="background: ${palette.surface}; border: 1px solid ${palette.secondary}15; border-radius: ${borderRadius};"></div>
+      ${visualHtml}
     </div>`;
   }).join('');
 

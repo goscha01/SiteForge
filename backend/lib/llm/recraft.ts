@@ -86,8 +86,8 @@ export async function generateAssets(
     // Hero: Recraft V3 Vector
     const heroImage = await generateHeroIllustration(brandName, mood, siteType);
 
-    // Feature icons: Recraft V2 Vector (parallel, up to 3)
-    const subjects = iconSubjects.slice(0, 3);
+    // Feature icons: Recraft V2 Vector (parallel, up to 6)
+    const subjects = iconSubjects.slice(0, 6);
     const icons = await Promise.all(
       subjects.map((subject) => generateFeatureIcon(subject, mood))
     ).catch(() => [] as string[]);

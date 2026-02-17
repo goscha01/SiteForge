@@ -5,6 +5,13 @@ import type { ResolvedDesignTokens } from '@/lib/design/types';
 
 type BentoGridBlock = z.infer<typeof BentoGridSchema>;
 
+function renderIcon(icon: string, title: string): string {
+  if (icon.startsWith('data:')) {
+    return `<img src="${icon}" alt="${escapeHtml(title)}" class="w-12 h-12 mb-4 object-contain" />`;
+  }
+  return `<div class="text-3xl mb-4">${escapeHtml(icon)}</div>`;
+}
+
 export function renderBentoGrid(block: BentoGridBlock, tokens: ResolvedDesignTokens): string {
   const { palette, typography, borderRadius } = tokens;
 
@@ -27,7 +34,7 @@ function render2x2(
 ): string {
   const itemsHtml = block.items.map((item) => `
     <div class="block-card p-6 lg:p-8" style="background: ${palette.surface}; border-radius: ${borderRadius}; border: 1px solid ${palette.secondary}15;">
-      ${item.icon ? `<div class="text-3xl mb-4">${escapeHtml(item.icon)}</div>` : ''}
+      ${item.icon ? renderIcon(item.icon, item.title) : ''}
       <h3 class="text-lg font-bold mb-2" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif;">
         ${escapeHtml(item.title)}
       </h3>
@@ -58,7 +65,7 @@ function render3Col(
 ): string {
   const itemsHtml = block.items.map((item) => `
     <div class="block-card p-6" style="background: ${palette.surface}; border-radius: ${borderRadius}; border: 1px solid ${palette.secondary}15;">
-      ${item.icon ? `<div class="text-2xl mb-3">${escapeHtml(item.icon)}</div>` : ''}
+      ${item.icon ? renderIcon(item.icon, item.title) : ''}
       <h3 class="text-base font-bold mb-1" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif;">
         ${escapeHtml(item.title)}
       </h3>
@@ -97,7 +104,7 @@ function renderMixed(
 
     return `
     <div class="block-card p-6 lg:p-8 ${gridClass}" style="background: ${palette.surface}; border-radius: ${borderRadius}; border: 1px solid ${palette.secondary}15;">
-      ${item.icon ? `<div class="text-3xl mb-4">${escapeHtml(item.icon)}</div>` : ''}
+      ${item.icon ? renderIcon(item.icon, item.title) : ''}
       <h3 class="text-lg font-bold mb-2" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif;">
         ${escapeHtml(item.title)}
       </h3>

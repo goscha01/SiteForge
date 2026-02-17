@@ -13,8 +13,11 @@ export function renderServicesGrid(block: ServicesGridBlock, tokens: ResolvedDes
       ${escapeHtml(block.sectionTitle)}
     </h2>`;
 
-  function renderServiceIcon(icon?: string): string {
+  function renderServiceIcon(icon?: string, title?: string): string {
     if (!icon) return '';
+    if (icon.startsWith('data:')) {
+      return `<img src="${icon}" alt="${escapeHtml(title || '')}" class="w-12 h-12 mb-3 object-contain" />`;
+    }
     return `<div class="text-3xl mb-3">${icon}</div>`;
   }
 
@@ -23,7 +26,11 @@ export function renderServicesGrid(block: ServicesGridBlock, tokens: ResolvedDes
       const servicesHtml = block.services.map((service) => `
         <div class="py-6" style="border-bottom: 1px solid ${palette.secondary}20;">
           <div class="flex items-start gap-4">
-            ${service.icon ? `<span class="text-2xl shrink-0" style="color: ${palette.accent};">${service.icon}</span>` : ''}
+            ${service.icon
+              ? (service.icon.startsWith('data:')
+                ? `<img src="${service.icon}" alt="${escapeHtml(service.title)}" class="w-8 h-8 shrink-0 object-contain" />`
+                : `<span class="text-2xl shrink-0" style="color: ${palette.accent};">${service.icon}</span>`)
+              : ''}
             <div>
               <h3 class="text-lg mb-1" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif; font-weight: ${typography.headingWeight};">
                 ${escapeHtml(service.title)}
@@ -51,9 +58,13 @@ export function renderServicesGrid(block: ServicesGridBlock, tokens: ResolvedDes
       const servicesHtml = block.services.map((service) => `
         <div class="flex items-start gap-6 p-6 transition-shadow duration-200 hover:shadow-md" style="background-color: ${palette.surface}; border-radius: ${borderRadius}; border: 1px solid ${palette.secondary}12;">
           ${service.icon
-            ? `<div class="shrink-0 w-14 h-14 flex items-center justify-center" style="background: ${palette.primary}10; border-radius: ${borderRadius};">
-                <span class="text-2xl">${service.icon}</span>
-              </div>`
+            ? (service.icon.startsWith('data:')
+              ? `<div class="shrink-0 w-14 h-14 flex items-center justify-center" style="background: ${palette.primary}10; border-radius: ${borderRadius};">
+                  <img src="${service.icon}" alt="${escapeHtml(service.title)}" class="w-10 h-10 object-contain" />
+                </div>`
+              : `<div class="shrink-0 w-14 h-14 flex items-center justify-center" style="background: ${palette.primary}10; border-radius: ${borderRadius};">
+                  <span class="text-2xl">${service.icon}</span>
+                </div>`)
             : ''}
           <div>
             <h3 class="text-lg mb-2" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif; font-weight: ${typography.headingWeight};">
@@ -85,7 +96,7 @@ export function renderServicesGrid(block: ServicesGridBlock, tokens: ResolvedDes
 
       const servicesHtml = block.services.map((service) => `
         <div class="p-6 transition-shadow duration-200 hover:shadow-lg" style="background-color: ${palette.surface}; border-radius: ${borderRadius}; border: 1px solid ${palette.secondary}12;">
-          ${renderServiceIcon(service.icon)}
+          ${renderServiceIcon(service.icon, service.title)}
           <h3 class="text-lg mb-2" style="color: ${palette.textPrimary}; font-family: '${typography.headingFont}', sans-serif; font-weight: ${typography.headingWeight};">
             ${escapeHtml(service.title)}
           </h3>

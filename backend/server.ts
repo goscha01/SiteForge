@@ -287,10 +287,21 @@ app.post('/redesign', async (req: Request, res: Response) => {
     // Step E: Optional Recraft illustrations
     if (input.withIllustrations) {
       await runStep(res, 'illustrations', async () => {
-        const valueBlock = pageSchema.blocks.find((b) => b.type === 'ValueProps3');
-        const iconSubjects = valueBlock && valueBlock.type === 'ValueProps3'
-          ? valueBlock.items.map((item) => item.title)
-          : [];
+        // Collect icon subjects from ALL blocks that have titled items
+        const iconSubjects: string[] = [];
+        for (const block of pageSchema.blocks) {
+          if (block.type === 'ValueProps3') {
+            iconSubjects.push(...block.items.map((item) => item.title));
+          } else if (block.type === 'BentoGrid') {
+            iconSubjects.push(...block.items.map((item) => item.title));
+          } else if (block.type === 'FeatureZigzag') {
+            iconSubjects.push(...block.items.map((item) => item.title));
+          } else if (block.type === 'ServicesGrid') {
+            iconSubjects.push(...block.services.map((s) => s.title));
+          }
+        }
+        // Deduplicate subjects
+        const uniqueSubjects = [...new Set(iconSubjects)];
 
         const topIndustry = observations.industryCandidates[0]?.label || 'business';
         const tone = observations.brandSignals.perceivedTone || 'professional';
@@ -299,11 +310,11 @@ app.post('/redesign', async (req: Request, res: Response) => {
           content.brandName,
           tone,
           topIndustry,
-          iconSubjects
+          uniqueSubjects
         );
 
         console.log(`[pipeline]   Hero image: ${assets.heroImage ? 'generated' : 'none'}`);
-        console.log(`[pipeline]   Icons generated: ${assets.icons.length}`);
+        console.log(`[pipeline]   Icons generated: ${assets.icons.length} (subjects: ${uniqueSubjects.length})`);
 
         // Inject hero image
         if (assets.heroImage) {
@@ -314,14 +325,40 @@ app.post('/redesign', async (req: Request, res: Response) => {
           }
         }
 
-        // Inject feature icons
-        if (assets.icons.length > 0 && valueBlock && valueBlock.type === 'ValueProps3') {
-          valueBlock.items.forEach((item, i) => {
-            if (assets.icons[i]) {
-              item.icon = assets.icons[i];
-            }
-          });
+        // Build a map: subject title → icon URL for injection
+        const iconMap = new Map<string, string>();
+        uniqueSubjects.forEach((subject, i) => {
+          if (assets.icons[i]) {
+            iconMap.set(subject, assets.icons[i]);
+          }
+        });
+
+        // Inject icons into ALL blocks that have icon fields
+        for (const block of pageSchema.blocks) {
+          if (block.type === 'ValueProps3') {
+            block.items.forEach((item) => {
+              const icon = iconMap.get(item.title);
+              if (icon) item.icon = icon;
+            });
+          } else if (block.type === 'BentoGrid') {
+            block.items.forEach((item) => {
+              const icon = iconMap.get(item.title);
+              if (icon) (item as { icon?: string }).icon = icon;
+            });
+          } else if (block.type === 'FeatureZigzag') {
+            block.items.forEach((item) => {
+              const icon = iconMap.get(item.title);
+              if (icon) (item as { icon?: string }).icon = icon;
+            });
+          } else if (block.type === 'ServicesGrid') {
+            block.services.forEach((service) => {
+              const icon = iconMap.get(service.title);
+              if (icon) (service as { icon?: string }).icon = icon;
+            });
+          }
         }
+
+        console.log(`[pipeline]   Icons injected into ${iconMap.size} unique items across all blocks`);
       });
     }
 
