@@ -59,7 +59,11 @@ const STEP_LABELS: Record<string, string> = {
   qa_loop: 'Running visual QA',
 };
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+function resolveBackendUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+  return raw.startsWith('http') ? raw : `https://${raw}`;
+}
+const BACKEND_URL = resolveBackendUrl();
 
 function ScoreBadge({ score }: { score: number }) {
   const color = score >= 80 ? 'bg-green-100 text-green-800' :
