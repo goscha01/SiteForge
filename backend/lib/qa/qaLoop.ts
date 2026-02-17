@@ -111,7 +111,7 @@ export async function runQALoop(
             ...currentSchema,
             blocks: diversityResult.schema.blocks,
           };
-          currentHtml = renderPageHtml(currentSchema, resolvedTokens, signature, density);
+          currentHtml = renderPageHtml(currentSchema, resolvedTokens, signature, density, 'v2').html;
           allDiff.push(...diversityResult.changes.map((c) => `[forced-diversity] ${c}`));
           console.log(`[qa]   Forced diversity: ${diversityResult.changes.join('; ')}`);
         }
@@ -129,7 +129,7 @@ export async function runQALoop(
       currentSchema = patched;
 
       // 5. Re-render
-      currentHtml = renderPageHtml(currentSchema, resolvedTokens, signature, density);
+      currentHtml = renderPageHtml(currentSchema, resolvedTokens, signature, density, 'v2').html;
       console.log(`[qa]   Re-rendered: ${currentHtml.length} chars`);
     } catch (error) {
       console.error('[qa] QA loop iteration failed:', error);

@@ -119,12 +119,17 @@ function scoreHierarchy(schema: PageSchema): ScoreCategory {
     notes.push('Footer is not the last block');
   }
 
-  // CTA present
-  const hasCTA = schema.blocks.some((b) => b.type === 'CTASection');
-  if (hasCTA) {
+  // CTA present — check for dedicated CTA block OR CTA in hero
+  const hasCTABlock = schema.blocks.some((b) => b.type === 'CTASection');
+  const heroBlock = schema.blocks.find((b) => b.type === 'HeroSplit');
+  const heroCTA = heroBlock && 'ctaText' in heroBlock && (heroBlock as Record<string, unknown>).ctaText;
+  if (hasCTABlock) {
     score += 3;
+  } else if (heroCTA) {
+    score += 2;
+    notes.push('CTA found in hero (no dedicated CTA section)');
   } else {
-    notes.push('No CTA section found');
+    notes.push('No CTA found');
   }
 
   return { score, max: 10, notes: notes.join('; ') || 'Good visual hierarchy' };

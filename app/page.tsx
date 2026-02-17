@@ -52,6 +52,19 @@ interface PipelineResult {
   warnings: string[];
   signature: string;
   density: string;
+  manifest?: {
+    blocks: { index: number; type: string; variant: string }[];
+    tokensApplied: {
+      palette: Record<string, string>;
+      typography: { headingFont: string; bodyFont: string };
+      borderRadius: string;
+    };
+    signatureApplied: string | null;
+    density: string;
+    schemaHash: string;
+    version: string;
+  };
+  schemaV1?: Record<string, unknown>;
 }
 
 interface StepInfo {
@@ -405,6 +418,7 @@ export default function Home() {
               {/* Preview Tab */}
               {activeTab === 'preview' && (
                 <iframe
+                  key={state.data.manifest?.schemaHash || 'preview'}
                   srcDoc={state.data.html}
                   className="w-full border-0"
                   style={{ height: '80vh' }}
@@ -453,6 +467,64 @@ export default function Home() {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {/* Render Manifest */}
+                  {state.data.manifest && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        Render Manifest
+                        <span className="ml-2 text-xs font-normal text-gray-400">
+                          hash: {state.data.manifest.schemaHash} | {state.data.manifest.version}
+                        </span>
+                      </h3>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                        <div className="flex flex-wrap gap-3 text-sm">
+                          <span className="text-gray-500">Signature:</span>
+                          <code className="text-purple-700 font-semibold">{state.data.manifest.signatureApplied || 'none'}</code>
+                          <span className="text-gray-500 ml-3">Density:</span>
+                          <code className="text-gray-700">{state.data.manifest.density}</code>
+                          <span className="text-gray-500 ml-3">Version:</span>
+                          <code className={state.data.manifest.version === 'v2' ? 'text-green-700 font-semibold' : 'text-gray-700'}>{state.data.manifest.version}</code>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium mb-1">Rendered Blocks ({state.data.manifest.blocks.length})</p>
+                          <div className="space-y-0.5">
+                            {state.data.manifest.blocks.map((b) => (
+                              <div key={b.index} className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-400 font-mono w-6">{b.index}.</span>
+                                <span className="font-medium text-gray-700">{b.type}</span>
+                                <span className="text-blue-600">({b.variant})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium mb-1">Tokens Applied</p>
+                          <div className="flex flex-wrap gap-3">
+                            {Object.entries(state.data.manifest.tokensApplied.palette).map(([key, val]) => (
+                              <div key={key} className="flex items-center gap-1 text-xs">
+                                <span className="text-gray-400">{key}:</span>
+                                {typeof val === 'string' && val.startsWith('#') ? (
+                                  <span className="flex items-center gap-0.5">
+                                    <span className="inline-block w-3 h-3 rounded border border-gray-300" style={{ backgroundColor: val }} />
+                                    <code className="text-gray-600">{val}</code>
+                                  </span>
+                                ) : (
+                                  <code className="text-gray-600">{val}</code>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-3 mt-1 text-xs">
+                            <span className="text-gray-400">Fonts:</span>
+                            <code className="text-gray-600">{state.data.manifest.tokensApplied.typography.headingFont} / {state.data.manifest.tokensApplied.typography.bodyFont}</code>
+                            <span className="text-gray-400 ml-2">Radius:</span>
+                            <code className="text-gray-600">{state.data.manifest.tokensApplied.borderRadius}</code>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 

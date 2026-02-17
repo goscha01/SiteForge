@@ -326,12 +326,18 @@ app.post('/redesign', async (req: Request, res: Response) => {
     }
 
     // Step F: Render deterministic HTML with signature + density
-    let html = await runStep(res, 'render', async () => {
-      return renderPageHtml(pageSchema, resolvedTokens, signature, density);
+    const renderResult = await runStep(res, 'render', async () => {
+      return renderPageHtml(pageSchema, resolvedTokens, signature, density, 'v1');
     });
+    let html = renderResult.html;
+    let manifest = renderResult.manifest;
 
     console.log(`[pipeline]   HTML length: ${html.length} chars`);
     console.log(`[pipeline]   Signature applied: ${signature}`);
+    console.log(`[pipeline]   Manifest blocks: ${manifest.blocks.map((b) => `${b.type}(${b.variant})`).join(', ')}`);
+
+    // Track pre-QA schema for debug
+    const schemaV1 = JSON.parse(JSON.stringify(pageSchema));
 
     // Step G: QA loop — run if requested OR if score says must improve
     let qaResult = undefined;
@@ -341,8 +347,15 @@ app.post('/redesign', async (req: Request, res: Response) => {
         const qa = await runQALoop(html, pageSchema, resolvedTokens, 1, signature, density);
         if (qa.iterated) {
           html = qa.html;
+          // Update pageSchema to the post-QA version
+          pageSchema.blocks = qa.schema.blocks;
+          // Re-render to get updated manifest with v2 tag
+          const v2Render = renderPageHtml(pageSchema, resolvedTokens, signature, density, 'v2');
+          html = v2Render.html;
+          manifest = v2Render.manifest;
           console.log(`[pipeline]   QA patched: ${qa.patches.length} patches applied`);
           console.log(`[pipeline]   QA diff: ${qa.diff.join('; ')}`);
+          console.log(`[pipeline]   Schema updated to v2 (hash: ${manifest.schemaHash})`);
           return { patches: qa.patches, critique: qa.critique, diff: qa.diff };
         } else {
           console.log(`[pipeline]   QA: no patches needed`);
@@ -362,6 +375,8 @@ app.post('/redesign', async (req: Request, res: Response) => {
       result: {
         html,
         schema: pageSchema,
+        schemaV1: qaResult ? schemaV1 : undefined,
+        manifest,
         observations,
         styleSpec,
         layoutPlan,
