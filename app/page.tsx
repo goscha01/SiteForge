@@ -496,7 +496,7 @@ export default function Home() {
                   key={dir.id}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                  {/* Preview thumbnail */}
+                  {/* Preview thumbnail — iframe scaled to fill container */}
                   <div
                     className="aspect-[4/3] bg-gray-100 relative overflow-hidden cursor-pointer group"
                     onClick={() => dir.previewHtml && setEnlargedPreview({ html: dir.previewHtml, label: `${dir.id} — ${dir.styleLabel}` })}
@@ -506,8 +506,8 @@ export default function Home() {
                       <>
                         <iframe
                           srcDoc={dir.previewHtml}
-                          className="w-[800px] h-[600px] border-0 origin-top-left pointer-events-none"
-                          style={{ transform: 'scale(0.42)', transformOrigin: 'top left' }}
+                          className="absolute top-0 left-0 border-0 pointer-events-none"
+                          style={{ width: '250%', height: '250%', transform: 'scale(0.4)', transformOrigin: 'top left' }}
                           sandbox="allow-scripts allow-same-origin"
                           title={`${dir.styleLabel} preview`}
                         />
@@ -522,7 +522,7 @@ export default function Home() {
                         Preview unavailable
                       </div>
                     )}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 z-10">
                       <span className="bg-white/90 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-full text-sm font-bold shadow-sm">
                         {dir.id}
                       </span>
@@ -911,14 +911,15 @@ export default function Home() {
         {/* ─── Enlarged Preview Modal ──────────────────────────────────────── */}
         {enlargedPreview && (
           <div
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setEnlargedPreview(null)}
           >
             <div
-              className="bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-5xl max-h-[90vh] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col"
+              style={{ width: '90vw', height: '85vh' }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 shrink-0">
                 <h3 className="font-semibold text-gray-900">Preview: {enlargedPreview.label}</h3>
                 <button
                   onClick={() => setEnlargedPreview(null)}
@@ -929,8 +930,8 @@ export default function Home() {
               </div>
               <iframe
                 srcDoc={enlargedPreview.html}
-                className="w-full flex-1 border-0"
-                style={{ minHeight: '70vh' }}
+                className="w-full border-0 flex-1"
+                style={{ minHeight: 0 }}
                 sandbox="allow-scripts allow-same-origin"
                 title="Enlarged preview"
               />

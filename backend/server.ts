@@ -553,6 +553,29 @@ app.post('/directions', async (req: Request, res: Response) => {
           const signature = getSignatureForStyle(selection.styleId);
           const density = getDensityForStyle(style);
 
+          // Inject placeholder images into hero blocks so previews look visual
+          for (const block of previewBlocks) {
+            const b = block as Record<string, unknown>;
+            const bType = b.type as string;
+            if ((bType === 'HeroSplit' || bType === 'HeroTerminal' || bType === 'HeroChart') && !b.imageUrl) {
+              const p = tokens.palette;
+              b.imageUrl = `data:image/svg+xml,${encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">` +
+                `<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">` +
+                `<stop offset="0%" stop-color="${p.primary}"/>` +
+                `<stop offset="50%" stop-color="${p.accent}"/>` +
+                `<stop offset="100%" stop-color="${p.secondary}"/>` +
+                `</linearGradient></defs>` +
+                `<rect width="800" height="500" fill="url(#g)" rx="16"/>` +
+                `<circle cx="250" cy="200" r="80" fill="${p.background}" opacity="0.15"/>` +
+                `<circle cx="550" cy="300" r="120" fill="${p.background}" opacity="0.1"/>` +
+                `<rect x="320" y="180" width="160" height="140" rx="12" fill="${p.background}" opacity="0.12"/>` +
+                `</svg>`
+              )}`;
+              b.imageAlt = `${content.brandName} preview`;
+            }
+          }
+
           // Render preview HTML (live iframe, no screenshot needed)
           let previewHtml = '';
 
