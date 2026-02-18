@@ -645,6 +645,95 @@ app.post('/directions', async (req: Request, res: Response) => {
   }
 });
 
+// ─── V3: Single-Style Preview Regeneration ──────────────────────────────────
+
+const PreviewRequest = z.object({
+  styleId: z.string(),
+  extractedContent: z.any(),
+});
+
+app.post('/preview', async (req: Request, res: Response) => {
+  const parsed = PreviewRequest.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Invalid request', details: parsed.error.issues.map((i) => i.message) });
+    return;
+  }
+  const { styleId, extractedContent: content } = parsed.data;
+
+  const style = getStyle(styleId);
+  if (!style) {
+    res.status(400).json({ error: `Unknown styleId: ${styleId}` });
+    return;
+  }
+
+  console.log(`[preview] Regenerating preview for: ${styleId}`);
+
+  try {
+    const previewSchema = await generatePreviewSchema(styleId, content);
+
+    let previewBlocks;
+    try {
+      previewBlocks = flattenBlocks(previewSchema.blocks);
+    } catch {
+      console.warn(`[preview] Block flattening failed for ${styleId}`);
+      previewBlocks = [];
+    }
+
+    const tokens = resolveStyleTokens(style, content.brandName);
+    const signature = getSignatureForStyle(styleId);
+    const density = getDensityForStyle(style);
+
+    // Inject placeholder images
+    const IMAGE_VARIANTS = new Set(['split-left', 'split-right', 'asymmetric']);
+    for (const block of previewBlocks) {
+      const b = block as Record<string, unknown>;
+      const bType = b.type as string;
+      if (bType === 'HeroSplit' && !IMAGE_VARIANTS.has(b.variant as string)) {
+        b.variant = 'split-left';
+      }
+      if ((bType === 'HeroSplit' || bType === 'HeroTerminal' || bType === 'HeroChart') && (!b.imageUrl || b.imageUrl === 'placeholder')) {
+        const p = tokens.palette;
+        b.imageUrl = `data:image/svg+xml,${encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">` +
+          `<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">` +
+          `<stop offset="0%" stop-color="${p.primary}"/>` +
+          `<stop offset="50%" stop-color="${p.accent}"/>` +
+          `<stop offset="100%" stop-color="${p.secondary}"/>` +
+          `</linearGradient></defs>` +
+          `<rect width="800" height="500" fill="url(#g)" rx="16"/>` +
+          `<circle cx="250" cy="200" r="80" fill="${p.background}" opacity="0.15"/>` +
+          `<circle cx="550" cy="300" r="120" fill="${p.background}" opacity="0.1"/>` +
+          `<rect x="320" y="180" width="160" height="140" rx="12" fill="${p.background}" opacity="0.12"/>` +
+          `</svg>`
+        )}`;
+        b.imageAlt = `${content.brandName} preview`;
+      }
+    }
+
+    let previewHtml = '';
+    if (previewBlocks.length > 0) {
+      previewHtml = renderPreviewHtml(previewBlocks, tokens, signature, density);
+    } else {
+      const t = tokens;
+      previewHtml = `<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(t.typography.headingFont)}:wght@700&family=${encodeURIComponent(t.typography.bodyFont)}:wght@400&display=swap" rel="stylesheet">
+<style>*{margin:0;box-sizing:border-box}body{font-family:'${t.typography.bodyFont}',system-ui,sans-serif;background:${t.palette.background};color:${t.palette.textPrimary}}</style>
+</head><body>
+<div style="padding:3rem 2rem;text-align:center">
+  <h1 style="font-family:'${t.typography.headingFont}',system-ui,sans-serif;font-size:2rem;font-weight:700;color:${t.palette.textPrimary}">${style.label}</h1>
+  <p style="color:${t.palette.textSecondary};font-size:0.95rem;max-width:400px;margin:0.5rem auto">Preview generation failed — try again.</p>
+</div></body></html>`;
+    }
+
+    console.log(`[preview] ✓ Done for ${styleId}`);
+    res.json({ previewHtml });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error(`[preview] ✗ Failed for ${styleId}:`, message);
+    res.status(500).json({ error: message });
+  }
+});
+
 // ─── V3: Finalize Endpoint ──────────────────────────────────────────────────
 
 const FinalizeRequest = z.object({

@@ -241,6 +241,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [enlargedPreview, setEnlargedPreview] = useState<{ html: string; label: string } | null>(null);
   const [designHistory, setDesignHistory] = useState<Array<{ data: FinalResult; styleId: string; dnaId?: string; timestamp: number }>>([]);
+  const [directionHistory, setDirectionHistory] = useState<Array<{ directions: Direction[]; timestamp: number }>>([]);
+  const [regeneratingCard, setRegeneratingCard] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Stored from directions step for reuse in finalize
@@ -289,6 +291,7 @@ export default function Home() {
         extractedContent: result.extractedContent,
         url: targetUrl,
       });
+      setDirectionHistory(prev => [...prev, { directions: result.directions, timestamp: Date.now() }]);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
       setState({
@@ -298,6 +301,39 @@ export default function Home() {
       });
     }
   }, [url]);
+
+  // ─── Regenerate single card preview ──────────────────────────────────────
+
+  const handleRegenerateCard = useCallback(async (directionId: string, styleId: string) => {
+    if (state.status !== 'directions') return;
+    const dirData = directionsDataRef.current;
+    if (!dirData) return;
+
+    setRegeneratingCard(directionId);
+    try {
+      const resp = await fetch(`${BACKEND_URL}/preview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ styleId, extractedContent: dirData.extractedContent }),
+      });
+      if (!resp.ok) throw new Error('Preview request failed');
+      const data = await resp.json();
+
+      setState(prev => {
+        if (prev.status !== 'directions') return prev;
+        return {
+          ...prev,
+          directions: prev.directions.map(d =>
+            d.id === directionId ? { ...d, previewHtml: data.previewHtml } : d
+          ),
+        };
+      });
+    } catch (err) {
+      console.error('Failed to regenerate preview:', err);
+    } finally {
+      setRegeneratingCard(null);
+    }
+  }, [state.status]);
 
   // ─── Choose style → DNA selection ──────────────────────────────────────────
 
@@ -476,6 +512,38 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Direction history strip */}
+            {directionHistory.length > 1 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 font-medium mb-2">Previous style sets ({directionHistory.length})</p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {directionHistory.map((entry, idx) => {
+                    const isActive = entry.directions === state.directions;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setState(prev => {
+                            if (prev.status !== 'directions') return prev;
+                            return { ...prev, directions: entry.directions };
+                          });
+                        }}
+                        className={`shrink-0 px-3 py-2 rounded-lg border text-left text-xs transition-colors ${
+                          isActive
+                            ? 'border-blue-500 bg-blue-50 text-blue-900'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="font-semibold">Set #{idx + 1}</div>
+                        <div className="text-gray-500">{entry.directions.map(d => d.styleLabel).join(', ')}</div>
+                        <div className="text-gray-400">{new Date(entry.timestamp).toLocaleTimeString()}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {state.directions.map((dir) => (
                 <div
@@ -522,12 +590,26 @@ export default function Home() {
                     </div>
                     <p className="text-sm text-blue-700 font-medium mb-2">{dir.bestFor}</p>
                     <p className="text-sm text-gray-600 mb-4">{dir.reason}</p>
-                    <button
-                      onClick={() => handleChooseStyle(dir)}
-                      className="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Choose This Style
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleChooseStyle(dir)}
+                        className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                      >
+                        Choose This Style
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRegenerateCard(dir.id, dir.styleId); }}
+                        disabled={regeneratingCard === dir.id}
+                        className="px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 disabled:opacity-50"
+                        title="Regenerate this preview"
+                      >
+                        {regeneratingCard === dir.id ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          '\u21BB'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
