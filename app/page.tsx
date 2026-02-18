@@ -460,12 +460,20 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-900">Choose a Direction</h2>
                 <p className="text-gray-500 mt-1">Pick the style that best fits your brand. We&apos;ll generate a full site with your chosen direction.</p>
               </div>
-              <button
-                onClick={goBackToIdle}
-                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                Try another URL
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleGenerateDirections}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Regenerate Styles
+                </button>
+                <button
+                  onClick={goBackToIdle}
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Try another URL
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
