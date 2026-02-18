@@ -237,8 +237,6 @@ function ScoreBadge({ score, mustImprove }: { score: number; mustImprove?: boole
 
 export default function Home() {
   const [url, setUrl] = useState('');
-  const [withIllustrations, setWithIllustrations] = useState(false);
-  const [runQa, setRunQa] = useState(true);
   const [state, setState] = useState<AppState>({ status: 'idle' });
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [enlargedPreview, setEnlargedPreview] = useState<{ html: string; label: string } | null>(null);
@@ -338,8 +336,8 @@ export default function Home() {
           url: dirData.url,
           styleId,
           dnaId,
-          withIllustrations,
-          runQa,
+          withIllustrations: true,
+          runQa: true,
           extractedContent: dirData.extractedContent,
           observations: dirData.observations,
         },
@@ -361,7 +359,7 @@ export default function Home() {
         steps: [],
       });
     }
-  }, [withIllustrations, runQa]);
+  }, []);
 
   // ─── Navigation ─────────────────────────────────────────────────────────────
 
@@ -425,28 +423,6 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={withIllustrations}
-                    onChange={(e) => setWithIllustrations(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    disabled={state.status === 'loading_directions'}
-                  />
-                  Generate illustrations (Recraft)
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={runQa}
-                    onChange={(e) => setRunQa(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    disabled={state.status === 'loading_directions'}
-                  />
-                  Run visual QA loop
-                </label>
-              </div>
             </div>
 
             {/* Loading State */}
