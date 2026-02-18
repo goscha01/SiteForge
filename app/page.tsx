@@ -78,7 +78,7 @@ type AppState =
   | { status: 'directions'; directions: Direction[]; observations: Record<string, unknown>; extractedContent: Record<string, unknown>; url: string }
   | { status: 'dna_selection'; styleId: string; styleLabel: string; dnas: LayoutDNA[]; url: string }
   | { status: 'loading_final'; steps: StepInfo[]; currentStep: string; selectedStyle: string; selectedDna?: string }
-  | { status: 'final'; data: FinalResult; steps: StepInfo[] }
+  | { status: 'final'; data: FinalResult; steps: StepInfo[]; styleId: string; dnaId?: string }
   | { status: 'error'; message: string; steps: StepInfo[] };
 
 type Tab = 'preview' | 'html' | 'schema' | 'debug';
@@ -242,6 +242,7 @@ export default function Home() {
   const [state, setState] = useState<AppState>({ status: 'idle' });
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [enlargedPreview, setEnlargedPreview] = useState<{ html: string; label: string } | null>(null);
+  const [designHistory, setDesignHistory] = useState<Array<{ data: FinalResult; styleId: string; dnaId?: string; timestamp: number }>>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   // Stored from directions step for reuse in finalize
@@ -349,7 +350,8 @@ export default function Home() {
         abortRef.current.signal,
       );
 
-      setState({ status: 'final', data: result, steps: [] });
+      setState({ status: 'final', data: result, steps: [], styleId, dnaId });
+      setDesignHistory(prev => [...prev, { data: result, styleId, dnaId, timestamp: Date.now() }]);
       setActiveTab('preview');
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -645,6 +647,39 @@ export default function Home() {
 
         {/* ─── Screen 3: Final Result ──────────────────────────────────────── */}
         {state.status === 'final' && (
+          <>
+            {/* History strip */}
+            {designHistory.length > 1 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 font-medium mb-2">Previous versions ({designHistory.length})</p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {designHistory.map((entry, idx) => {
+                    const isActive = entry.data === state.data;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setState({ status: 'final', data: entry.data, steps: [], styleId: entry.styleId, dnaId: entry.dnaId });
+                          setActiveTab('preview');
+                        }}
+                        className={`shrink-0 px-3 py-2 rounded-lg border text-left text-xs transition-colors ${
+                          isActive
+                            ? 'border-blue-500 bg-blue-50 text-blue-900'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="font-semibold">#{idx + 1} {entry.data.styleId}</div>
+                        <div className="text-gray-400">
+                          {entry.data.score ? `${entry.data.score.total}pts` : ''}{' '}
+                          {entry.dnaId ? ` / ${entry.dnaId}` : ''}
+                        </div>
+                        <div className="text-gray-400">{new Date(entry.timestamp).toLocaleTimeString()}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           <div>
             {/* Action Bar */}
             <div className="flex items-center justify-between mb-4">
@@ -675,6 +710,12 @@ export default function Home() {
               </div>
 
               <div className="flex gap-2">
+                <button
+                  onClick={() => state.status === 'final' && handleFinalize(state.styleId, state.dnaId)}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Regenerate
+                </button>
                 <button
                   onClick={goBackToIdle}
                   className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
@@ -906,6 +947,7 @@ export default function Home() {
               )}
             </div>
           </div>
+          </>
         )}
 
         {/* ─── Enlarged Preview Modal ──────────────────────────────────────── */}

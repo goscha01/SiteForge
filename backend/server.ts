@@ -554,10 +554,15 @@ app.post('/directions', async (req: Request, res: Response) => {
           const density = getDensityForStyle(style);
 
           // Inject placeholder images into hero blocks so previews look visual
+          const IMAGE_VARIANTS = new Set(['split-left', 'split-right', 'asymmetric']);
           for (const block of previewBlocks) {
             const b = block as Record<string, unknown>;
             const bType = b.type as string;
-            if ((bType === 'HeroSplit' || bType === 'HeroTerminal' || bType === 'HeroChart') && !b.imageUrl) {
+            // Force hero to an image-showing variant if it's using a text-only one
+            if (bType === 'HeroSplit' && !IMAGE_VARIANTS.has(b.variant as string)) {
+              b.variant = 'split-left';
+            }
+            if ((bType === 'HeroSplit' || bType === 'HeroTerminal' || bType === 'HeroChart') && (!b.imageUrl || b.imageUrl === 'placeholder')) {
               const p = tokens.palette;
               b.imageUrl = `data:image/svg+xml,${encodeURIComponent(
                 `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">` +

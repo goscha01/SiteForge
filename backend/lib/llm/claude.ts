@@ -106,11 +106,12 @@ export async function repairSchema(
 // V3 helpers & service functions
 // ---------------------------------------------------------------------------
 
-async function callClaude(system: string, userMessage: string): Promise<string> {
+async function callClaude(system: string, userMessage: string, temperature?: number): Promise<string> {
   const client = getClient();
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 8192,
+    temperature: temperature ?? 0.7,
     system,
     messages: [{ role: 'user', content: userMessage }],
   });
@@ -156,7 +157,8 @@ export async function generatePreviewSchema(
 ): Promise<PreviewSchema> {
   const json = await callClaude(
     PREVIEW_SCHEMA_SYSTEM,
-    previewSchemaPrompt(styleId, JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson())
+    previewSchemaPrompt(styleId, JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson()),
+    0.9,
   );
   return PreviewSchemaOutput.parse(JSON.parse(json));
 }
@@ -169,7 +171,8 @@ export async function generateLayoutPlanV3(
 ): Promise<LayoutPlanV3> {
   const json = await callClaude(
     LAYOUT_PLAN_SYSTEM,
-    layoutPlanPrompt(styleId, JSON.stringify(observations), JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson(), dnaJson)
+    layoutPlanPrompt(styleId, JSON.stringify(observations), JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson(), dnaJson),
+    0.9,
   );
   return LayoutPlanV3Schema.parse(JSON.parse(json));
 }
@@ -182,7 +185,8 @@ export async function generateFinalSchema(
 ): Promise<FinalPageSchema> {
   const json = await callClaude(
     FINAL_SCHEMA_SYSTEM,
-    finalSchemaPrompt(styleId, JSON.stringify(layoutPlan), JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson(), dnaJson)
+    finalSchemaPrompt(styleId, JSON.stringify(layoutPlan), JSON.stringify(content), getBlockCatalogJson(), getStyleLibraryJson(), dnaJson),
+    0.85,
   );
   return FinalPageSchemaOutput.parse(JSON.parse(json));
 }
@@ -193,7 +197,8 @@ export async function repairSchemaV3(
 ): Promise<FinalPageSchema> {
   const json = await callClaude(
     SCHEMA_REPAIR_SYSTEM,
-    schemaRepairPromptV3(errors.join('\n'), invalidSchema, getBlockCatalogJson(), getStyleLibraryJson())
+    schemaRepairPromptV3(errors.join('\n'), invalidSchema, getBlockCatalogJson(), getStyleLibraryJson()),
+    0.2,
   );
   return FinalPageSchemaOutput.parse(JSON.parse(json));
 }
@@ -204,7 +209,8 @@ export async function applyQAPatchClaude(
 ): Promise<FinalPageSchema> {
   const json = await callClaude(
     QA_PATCH_APPLY_SYSTEM,
-    qaPatchApplyPrompt(schema, qaPatch, getBlockCatalogJson(), getStyleLibraryJson())
+    qaPatchApplyPrompt(schema, qaPatch, getBlockCatalogJson(), getStyleLibraryJson()),
+    0.2,
   );
   return FinalPageSchemaOutput.parse(JSON.parse(json));
 }

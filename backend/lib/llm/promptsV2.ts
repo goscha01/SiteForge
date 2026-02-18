@@ -57,12 +57,18 @@ export function previewSchemaPrompt(
   blockCatalogJson: string,
   styleLibraryJson: string,
 ): string {
+  const nonce = Math.random().toString(36).slice(2, 10);
   return `Generate a MINIMAL preview schema for the chosen style. This preview is used to show the user a direction, not the final site.
+
+VARIATION_SEED: ${nonce}
+Use this seed as creative inspiration — choose different block variants, layout compositions, and content arrangements each time.
 
 Constraints:
 - Use ONLY tokens/typography from the selected style.
 - Use ONLY blocks and variants from the block catalog.
 - Keep it short: exactly 4 blocks.
+- The FIRST block MUST be a hero with a visual variant that shows an image (e.g. HeroSplit with split-left, split-right, or asymmetric). This is critical for the preview to look good.
+- For HeroSplit blocks, always include an "imageUrl" prop with value "placeholder" and "imageAlt" with a relevant description.
 - Must include the style's REQUIRED signatureArtifacts (as applicable) by choosing block variants/props that trigger them.
 - If content is missing, use short placeholders derived from brandName/title in CONTENT_SUMMARY_JSON; do NOT invent new products.
 
@@ -113,7 +119,11 @@ ${dnaJson}
 - Block count MUST be within the DNA's blockCount range.
 - Follow the structureHint for overall page composition.` : '';
 
+  const nonce = Math.random().toString(36).slice(2, 10);
   return `Create a layout plan for a single-page marketing site. We only care about DESIGN quality and composition.
+
+VARIATION_SEED: ${nonce}
+Use this seed as creative inspiration — choose different block types, variant combinations, and layout patterns each time. Prioritize variety and surprise.
 
 Constraints:
 - You MUST follow the selected style definition exactly.
@@ -167,7 +177,11 @@ export function finalSchemaPrompt(
 - LAYOUT DNA ACTIVE: The hero block type/variant, required blocks, and forbidden blocks from the DNA MUST be preserved exactly as specified in the layout plan. Do NOT change the hero type or variant.
 DNA: ${dnaJson}` : '';
 
+  const nonce = Math.random().toString(36).slice(2, 10);
   return `Generate the final PageSchema for rendering. This is design-first: composition, typography, wrappers, and signature artifacts matter most.
+
+VARIATION_SEED: ${nonce}
+Write fresh, creative content for each block. Vary phrasing, word choice, and structural emphasis. Do NOT reuse phrasing from previous generations.
 
 Hard rules:
 - Use ONLY tokens/typography from the selected style.tokens and its font pairing + type scale.
